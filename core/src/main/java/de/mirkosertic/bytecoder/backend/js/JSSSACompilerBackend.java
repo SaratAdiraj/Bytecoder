@@ -48,6 +48,7 @@ import de.mirkosertic.bytecoder.ssa.MethodHandleExpression;
 import de.mirkosertic.bytecoder.ssa.Program;
 import de.mirkosertic.bytecoder.ssa.ProgramGeneratorFactory;
 import de.mirkosertic.bytecoder.ssa.StringValue;
+import de.mirkosertic.bytecoder.ssa.TypeRef;
 import de.mirkosertic.bytecoder.ssa.Variable;
 import de.mirkosertic.bytecoder.stackifier.HeadToHeadControlFlowException;
 import de.mirkosertic.bytecoder.stackifier.Stackifier;
@@ -1542,10 +1543,15 @@ public class JSSSACompilerBackend implements CompileBackend<JSCompileResult> {
 
                 final StringBuilder theArguments = new StringBuilder();
                 boolean myfirst = true;
+                boolean isArrayOfInt = false;
                 for (final Variable theVariable : theSSAProgram.getArguments()) {
                     if (!Variable.THISREF_NAME.equals(theVariable.getName())) {
                         if (!myfirst) {
                             theArguments.append(',');
+                        }
+                        TypeRef varType = theVariable.resolveType();
+                        if (varType.toString().equals("array of INT")) {
+                            isArrayOfInt = true;
                         }
                         theArguments.append(theMinifier.toVariableName(theVariable.getName()));
                         myfirst = false;
@@ -1566,7 +1572,7 @@ public class JSSSACompilerBackend implements CompileBackend<JSCompileResult> {
                     theWriter.text(theJSMethodName)
                             .assign().text("function(").text(theArguments.toString()).text(")").space().text("{").newLine();
 
-                    theWriter.tab(2).text("return bytecoder.imports.").text(theLink.getModuleName()).text(".").text(theLink.getLinkName()).text("(").text(theArguments.toString()).text(");").newLine();
+                    theWriter.tab(2).text("return bytecoder.imports.").text(theLink.getModuleName()).text(".").text(theLink.getLinkName()).text("(").text(theArguments.toString() + (isArrayOfInt ? ".data" : "")).text(");").newLine();
                     theWriter.tab().text("};").newLine();
 
                     if (!theMethod.getAccessFlags().isStatic()) {
